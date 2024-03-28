@@ -58,6 +58,11 @@ func main() {
 	fmt.Printf("\nProgram execution time: %s\n", elapsed)
 }
 
+/*
+fetchAndSave() функця считывает urlStr и пытается получть отправть get запрос по этому url,
+затем, если успешный запрос сохраняет полученый body с запроса и сохраняет по
+пути dst
+*/
 func fetchAndSave(urlStr, dst string) {
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -77,6 +82,14 @@ func fetchAndSave(urlStr, dst string) {
 		return
 	}
 	fileName += ".html"
+
+	if dst == "./" {
+		dst = "./list"
+		err := os.MkdirAll(dst, 0755)
+		if err != nil {
+			log.Fatalf("Error creating folder %s: %v\n", dst, err)
+		}
+	}
 	filePath := filepath.Join(dst, fileName)
 
 	dstFile, err := os.Create(filePath)
@@ -95,6 +108,10 @@ func fetchAndSave(urlStr, dst string) {
 	fmt.Printf("File copied successfully to %s\n", filePath)
 }
 
+/*
+функция getFileNameFromURL() получает url сайт
+и возвращает имя файла на основе доменного имени url
+*/
 func getFileNameFromURL(siteURL string) (string, error) {
 	parsedURL, err := url.Parse(siteURL)
 	if err != nil {
