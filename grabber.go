@@ -22,8 +22,16 @@ func main() {
 	dst := flag.String("dst", "", "Destination directory path")
 	flag.Parse()
 
-	if *src == "" || *dst == "" {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Error: Source file path and destination directory path must be specified. Use --src and --dst flags to specify them.\n")
+		flag.PrintDefaults()
+		os.Exit(2)
 		log.Fatal("Source file path and destination directory path must be specified. Use --src and --dst flags to specify them.")
+	}
+
+	if *src == "" || *dst == "" {
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	srcFile, err := os.Open(*src)
@@ -58,11 +66,9 @@ func main() {
 	fmt.Printf("\nProgram execution time: %s\n", elapsed)
 }
 
-/*
-fetchAndSave() функця считывает urlStr и пытается отправть get запрос по этому url,
-затем, если успешный запрос сохраняет полученый body с запроса и сохраняет по
-пути dst
-*/
+// fetchAndSave() функця считывает urlStr и пытается отправть get запрос по этому url,
+// затем, если успешный запрос, сохраняет полученый body с запроса и сохраняет по
+// пути dst
 func fetchAndSave(urlStr, dst string) {
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -108,10 +114,8 @@ func fetchAndSave(urlStr, dst string) {
 	fmt.Printf("File copied successfully to %s\n", filePath)
 }
 
-/*
-функция getFileNameFromURL() получает url сайт
-и возвращает имя файла на основе доменного имени url
-*/
+// функция getFileNameFromURL() получает url сайт
+// и возвращает имя файла на основе доменного имени url
 func getFileNameFromURL(siteURL string) (string, error) {
 	parsedURL, err := url.Parse(siteURL)
 	if err != nil {
