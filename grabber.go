@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -90,29 +91,32 @@ func main() {
 
 // fetchUrl() получает url и пытается выполнить get запрос по этому url
 // и вернуть Body если получается вернуть resp с get запроса
-func fetchUrl(url string) (io.ReadCloser, error) {
+func fetchUrl(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error fetching URL: %v", err))
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		return nil, errors.New(fmt.Sprintf("Unexpected status code for URL %s: %d\n", url, resp.StatusCode))
 	}
 
-	return resp.Body, nil
+	buf := make([]byte, 1024)
+	body := bytes.NewBuffer(buf)
+	_, err = io.Copy(body, resp.Body)
+	return body.Bytes(), nil
 }
 
 // saveDst() получает fileName - имя файла в который необходимо записать respBody - тело запроса плученного с помощью get
 // и сохранить respBody по пути dst если путь ./, то создается ./list в которую записывается файл
-func saveDst(fileName, dst string, respBody io.ReadCloser) error {
-	defer respBody.Close()
+func saveDst(fileName, dst string, respBody []byte) error {
 
 	fileName = fmt.Sprintf("%s.html", fileName)
 
-	if dst == "./" {
+	if dst == "./" || dst == "." {
 		dst = "./list"
 		err := os.MkdirAll(dst, 0755)
 		if err != nil {
@@ -127,7 +131,7 @@ func saveDst(fileName, dst string, respBody io.ReadCloser) error {
 	}
 	defer dstFile.Close()
 
-	_, err = io.Copy(dstFile, respBody)
+	_, err = io.Copy(dstFile, bytes.NewBuffer(respBody))
 
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error copying content: %v\n", err))
